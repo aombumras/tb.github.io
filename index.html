@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Rich Menu System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        mint: {
+                            50: '#f0fdfc',
+                            100: '#ccfbf1',
+                            200: '#99f6e4',
+                            300: '#5eead4',
+                            400: '#2dd4bf',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                        },
+                        rose: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fda4af',
+                            400: '#fb7185',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                            800: '#9f1239',
+                            900: '#881337',
+                        }
+                    },
+                    backdropBlur: {
+                        xs: '2px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .glass-dark {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #f0fdfc 0%, #ecfdf5 50%, #f0fdf4 100%);
+        }
+        
+        .gradient-mint-rose {
+            background: linear-gradient(135deg, #5eead4 0%, #99f6e4 100%);
+        }
+        
+        .hover-lift {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .hover-lift:hover {
+            transform: translateY(-8px) scale(1.02);
+        }
+        
+        .menu-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .menu-item:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.2), 0 15px 25px rgba(0, 0, 0, 0.15), inset 0 2px 0 rgba(255,255,255,0.6);
+        }
+        
+        .menu-item:active {
+            transform: translateY(-2px) scale(0.98);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2), 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        
+        .floating-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 50;
+        }
+        
+        @media (max-width: 768px) {
+            .floating-btn {
+                bottom: 1rem;
+                right: 1rem;
+            }
+        }
+        
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        
+        .search-highlight {
+            background: linear-gradient(120deg, #fef3c7 0%, #fde68a 100%);
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+        }
+        
+        .category-badge {
+            background: linear-gradient(135deg, rgba(94, 234, 212, 0.2) 0%, rgba(153, 246, 228, 0.2) 100%);
+            border: 1px solid rgba(94, 234, 212, 0.3);
+        }
+        
+        .icon-selector {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .icon-selector::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .icon-selector::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+        
+        .icon-selector::-webkit-scrollbar-thumb {
+            background: rgba(94, 234, 212, 0.5);
+            border-radius: 3px;
+        }
+        
+        .icon-selector::-webkit-scrollbar-thumb:hover {
+            background: rgba(94, 234, 212, 0.7);
+        }
+        
+        /* Cute icon animations */
+        .animated-icon {
+            animation: bounce 2s infinite;
+        }
+        
+        .animated-icon:nth-child(2n) {
+            animation: wiggle 2.5s infinite;
+        }
+        
+        .animated-icon:nth-child(3n) {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        @keyframes wiggle {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+            25% {
+                transform: rotate(-5deg);
+            }
+            75% {
+                transform: rotate(5deg);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Header -->
+    <header class="bg-mint-100 border-b border-mint-200">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <h1 class="text-2xl md:text-3xl font-bold text-black flex items-center">
+                        <i class="fas fa-folder-open text-black mr-3"></i>
+                        แฟ้มผลงาน OPD TB
+                    </h1>
+                </div>
+                
+                <!-- Add Menu Button -->
+                <button 
+                    id="addMenuBtn"
+                    class="bg-white hover-lift rounded-full px-6 py-3 flex items-center text-black hover:bg-gray-100 transition-all font-medium shadow-lg border border-gray-300"
+                >
+                    <i class="fas fa-plus mr-2"></i>
+                    เพิ่มเมนู
+                </button>
+            </div>
+            
+            <div class="mt-3">
+                <p class="text-black">สถาบันบำราศนราดูร</p>
+                <p class="text-black text-sm mt-1 italic">วิสัยทัศน์ "เป็นองค์กรต้นแบบในการสร้างองค์ความรู้ ด้านโรคอุบัติใหม่/อุบัติซ้ำ ในระดับนานาชาติ ภายในปี 2570"</p>
+                <div class="flex flex-wrap gap-2 mt-4 justify-center">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-white/80 text-black border border-gray-300">
+                        <i class="fas fa-shield-alt mr-1 animated-icon"></i>
+                        2 P Safety Goals (SIMPLE) • ผู้ป่วยปลอดภัย เราก็ปลอดภัย
+                    </span>
+                </div>
+                
+                <!-- Real-time Date and Time Display -->
+                <div class="mt-4 p-4 bg-white/90 rounded-2xl border border-gray-200 shadow-sm">
+                    <div class="flex flex-col items-center space-y-2">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-calendar-alt text-mint-600 text-lg"></i>
+                            <span id="currentDate" class="text-lg font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-clock text-mint-600 text-lg"></i>
+                            <span id="currentTime" class="text-2xl font-bold text-mint-700 font-mono tracking-wider"></span>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading -->
+    <div id="loading" class="flex flex-col items-center justify-center min-h-[50vh]">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-mint-200 border-t-mint-500"></div>
+        <p class="mt-4 text-gray-600 font-medium">กำลังโหลดข้อมูลเมนู...</p>
+    </div>
+
+    <!-- Menu Container -->
+    <main id="menuContainer" class="container mx-auto px-4 py-8 hidden">
+        <!-- Categories will be rendered here -->
+    </main>
+
+    <!-- Footer Credit -->
+    <footer class="mt-16 py-6 bg-gradient-to-r from-mint-50 to-green-50 border-t border-mint-200">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex items-center justify-center space-x-2 mb-1">
+                <i class="fas fa-user-md text-sm text-green-600"></i>
+                <i class="fas fa-laptop-medical text-sm text-green-600"></i>
+                <i class="fas fa-heartbeat text-sm text-green-600"></i>
+            </div>
+            <p class="text-green-600 text-sm">
+                พัฒนาโดย ทีมสารสนเทศทางการพยาบาล
+            </p>
+        </div>
+    </footer>
+
+
+
+
+
+    <!-- Add Menu Modal -->
+    <div id="addMenuModal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-backdrop fixed inset-0" onclick="closeModal('addMenuModal')"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-dark rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                <!-- Modal Header -->
+                <div class="gradient-mint-rose text-white p-6 rounded-t-3xl">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-semibold flex items-center">
+                            <i class="fas fa-plus mr-3"></i>
+                            เพิ่มเมนูใหม่
+                        </h3>
+                        <button onclick="closeModal('addMenuModal')" class="text-white hover:text-gray-200 transition-colors">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="addMenuForm" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-black mb-2">ชื่อเมนู</label>
+                                <input 
+                                    type="text" 
+                                    id="menuName" 
+                                    required
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-mint-400 focus:border-transparent transition-all"
+                                    placeholder="ใส่ชื่อเมนู..."
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-black mb-2">ประเภท</label>
+                                <select 
+                                    id="menuType"
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-black focus:outline-none focus:ring-2 focus:ring-mint-400 focus:border-transparent transition-all"
+                                >
+                                    <option value="Daily Quality Check">Daily Quality Check</option>
+                                    <option value="Service profile และแผนพัฒนา">Service profile และแผนพัฒนา</option>
+                                    <option value="ระบบคุณภาพและความปลอดภัย">ระบบคุณภาพและความปลอดภัย</option>
+                                    <option value="Risk profile">Risk profile</option>
+                                    <option value="KPI">KPI</option>
+                                    <option value="Productivity">Productivity</option>
+                                    <option value="ข้อมูลคลินิกและผลทางการแพทย์">ข้อมูลคลินิกและผลทางการแพทย์</option>
+                                    <option value="แนวปฏิบัติ">แนวปฏิบัติ</option>
+                                    <option value="ผลงาน CQI และนวัตกรรม">ผลงาน CQI และนวัตกรรม</option>
+                                    <option value="อื่นๆ">อื่นๆ</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-black mb-2">ลิงค์</label>
+                            <input 
+                                type="url" 
+                                id="menuLink" 
+                                required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-mint-400 focus:border-transparent transition-all"
+                                placeholder="https://example.com"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-black mb-2">เลือกไอคอน</label>
+                            <div id="iconSelector" class="icon-selector bg-gray-50 rounded-xl p-4 grid grid-cols-6 md:grid-cols-8 gap-3 border border-gray-300"></div>
+                            <input type="hidden" id="selectedIcon" value="fas fa-stethoscope">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-black mb-2">เลือกสี</label>
+                            <div id="colorSelector" class="bg-gray-50 rounded-xl p-4 grid grid-cols-8 md:grid-cols-10 gap-3 border border-gray-300"></div>
+                            <input type="hidden" id="selectedColor" value="#5eead4">
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="p-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3 sm:justify-end">
+                    <button 
+                        type="button" 
+                        onclick="closeModal('addMenuModal')"
+                        class="px-6 py-3 rounded-xl border border-gray-300 text-black hover:bg-gray-100 transition-colors font-medium"
+                    >
+                        ยกเลิก
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="saveMenu()"
+                        class="px-6 py-3 rounded-xl gradient-mint-rose text-white hover:shadow-lg transition-all font-medium flex items-center justify-center"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        บันทึก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Menu Modal -->
+    <div id="editMenuModal" class="fixed inset-0 z-50 hidden">
+        <div class="modal-backdrop fixed inset-0" onclick="closeModal('editMenuModal')"></div>
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="glass-dark rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                <!-- Modal Header -->
+                <div class="gradient-mint-rose text-white p-6 rounded-t-3xl">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-semibold flex items-center">
+                            <i class="fas fa-edit mr-3"></i>
+                            แก้ไขเมนู
+                        </h3>
+                        <button onclick="closeModal('editMenuModal')" class="text-white hover:text-gray-200 transition-colors">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Modal Body -->
+                <div class="p-6">
+                    <form id="editMenuForm" class="space-y-6">
+                        <input type="hidden" id="editMenuId">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-black mb-2">ชื่อเมนู</label>
+                                <input 
+                                    type="text" 
+                                    id="editMenuName" 
+                                    required
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-mint-400 focus:border-transparent transition-all"
+                                >
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-black mb-2">ประเภท</label>
+                                <select 
+                                    id="editMenuType"
+                                    class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-black focus:outline-none focus:ring-2 focus:ring-mint-400 focus:border-transparent transition-all"
+                                >
+                                    <option value="Daily Quality Check">Daily Quality Check</option>
+                                    <option value="Service profile และแผนพัฒนา">Service profile และแผนพัฒนา</option>
+                                    <option value="ระบบคุณภาพและความปลอดภัย">ระบบคุณภาพและความปลอดภัย</option>
+                                    <option value="Risk profile">Risk profile</option>
+                                    <option value="KPI">KPI</option>
+                                    <option value="Productivity">Productivity</option>
+                                    <option value="ข้อมูลคลินิกและผลทางการแพทย์">ข้อมูลคลินิกและผลทางการแพทย์</option>
+                                    <option value="แนวปฏิบัติ">แนวปฏิบัติ</option>
+                                    <option value="ผลงาน CQI และนวัตกรรม">ผลงาน CQI และนวัตกรรม</option>
+                                    <option value="อื่นๆ">อื่นๆ</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-black mb-2">ลิงค์</label>
+                            <input 
+                                type="url" 
+                                id="editMenuLink" 
+                                required
+                                class="w-full px-4 py-3 rounded-xl border border-gray-300 bg-white text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-mint-400 focus:border-transparent transition-all"
+                            >
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-black mb-2">เลือกไอคอน</label>
+                            <div id="editIconSelector" class="icon-selector bg-gray-50 rounded-xl p-4 grid grid-cols-6 md:grid-cols-8 gap-3 border border-gray-300"></div>
+                            <input type="hidden" id="editSelectedIcon" value="fas fa-stethoscope">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-black mb-2">เลือกสี</label>
+                            <div id="editColorSelector" class="bg-gray-50 rounded-xl p-4 grid grid-cols-8 md:grid-cols-10 gap-3 border border-gray-300"></div>
+                            <input type="hidden" id="editSelectedColor" value="#5eead4">
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="p-6 border-t border-gray-200 flex flex-col sm:flex-row gap-3 sm:justify-end">
+                    <button 
+                        type="button" 
+                        onclick="closeModal('editMenuModal')"
+                        class="px-6 py-3 rounded-xl border border-gray-300 text-black hover:bg-gray-100 transition-colors font-medium"
+                    >
+                        ยกเลิก
+                    </button>
+                    <button 
+                        type="button" 
+                        onclick="updateMenu()"
+                        class="px-6 py-3 rounded-xl gradient-mint-rose text-white hover:shadow-lg transition-all font-medium flex items-center justify-center"
+                    >
+                        <i class="fas fa-save mr-2"></i>
+                        อัพเดท
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxPGb4DMyck-ykrB2xHbucq6tOYguR7S2Ml1UWggu6-P7tJWQsCA56F5o7aPUh_az6K/exec';
+        
+        // Medical and office icons for selection
+        const medicalIcons = [
+            'fas fa-stethoscope', 'fas fa-heartbeat', 'fas fa-pills', 'fas fa-syringe',
+            'fas fa-thermometer', 'fas fa-band-aid', 'fas fa-microscope', 'fas fa-x-ray',
+            'fas fa-ambulance', 'fas fa-hospital', 'fas fa-user-md', 'fas fa-tooth',
+            'fas fa-eye', 'fas fa-brain', 'fas fa-lungs', 'fas fa-heart',
+            'fas fa-bone', 'fas fa-dna', 'fas fa-virus', 'fas fa-shield-virus',
+            'fas fa-first-aid', 'fas fa-wheelchair', 'fas fa-bed', 'fas fa-calendar-check',
+            'fas fa-user-nurse', 'fas fa-clinic-medical', 'fas fa-procedures', 'fas fa-prescription-bottle',
+            'fas fa-prescription-bottle-alt', 'fas fa-capsules', 'fas fa-tablets', 'fas fa-mortar-pestle',
+            'fas fa-vial', 'fas fa-vials', 'fas fa-flask', 'fas fa-smoking-ban',
+            'fas fa-weight', 'fas fa-notes-medical', 'fas fa-file-medical', 'fas fa-file-medical-alt',
+            'fas fa-briefcase-medical', 'fas fa-laptop-medical', 'fas fa-comment-medical',
+            'fas fa-chart-line', 'fas fa-shield-alt', 'fas fa-exclamation-triangle', 'fas fa-tachometer-alt',
+            'fas fa-cogs', 'fas fa-book-medical', 'fas fa-lightbulb', 'fas fa-folder'
+        ];
+
+        // Expanded color palette with 50 colors including reds, pinks, oranges, grays, black, and white
+        const colors = [
+            // Mint and Green tones
+            '#5eead4', '#99f6e4', '#a7f3d0', '#6ee7b7', '#86efac', '#bbf7d0', '#34d399', '#10b981', '#059669', '#047857',
+            // Red tones
+            '#fecaca', '#fca5a5', '#f87171', '#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d', '#dc143c', '#b22222',
+            // Pink tones
+            '#fbb6ce', '#f9a8d4', '#f472b6', '#ec4899', '#db2777', '#be185d', '#9d174d', '#831843', '#ff69b4', '#ff1493',
+            // Orange tones
+            '#fed7aa', '#fdba74', '#fb923c', '#f97316', '#ea580c', '#dc2626', '#c2410c', '#9a3412', '#ff8c00', '#ff4500',
+            // Purple and Lavender tones
+            '#ddd6fe', '#c4b5fd', '#a78bfa', '#8b5cf6', '#7c3aed', '#6d28d9', '#5b21b6', '#4c1d95', '#9370db', '#8a2be2',
+            // Blue tones
+            '#a5b4fc', '#93c5fd', '#7dd3fc', '#67e8f9', '#3b82f6', '#2563eb', '#1d4ed8', '#1e40af', '#4169e1', '#0000ff',
+            // Yellow tones
+            '#fde68a', '#fcd34d', '#f59e0b', '#d97706', '#b45309', '#92400e', '#78350f', '#451a03', '#ffd700', '#ffff00',
+            // Gray tones
+            '#f3f4f6', '#e5e7eb', '#d1d5db', '#9ca3af', '#6b7280', '#4b5563', '#374151', '#1f2937', '#111827', '#000000',
+            // White
+            '#ffffff'
+        ];
+
+        let menuData = [];
+
+        // Category icons mapping
+        const categoryIcons = {
+            'Daily Quality Check': 'fas fa-calendar-check',
+            'Service profile และแผนพัฒนา': 'fas fa-chart-line',
+            'ระบบคุณภาพและความปลอดภัย': 'fas fa-shield-alt',
+            'Risk profile': 'fas fa-exclamation-triangle',
+            'KPI': 'fas fa-tachometer-alt',
+            'Productivity': 'fas fa-cogs',
+            'ข้อมูลคลินิกและผลทางการแพทย์': 'fas fa-stethoscope',
+            'แนวปฏิบัติ': 'fas fa-book-medical',
+            'ผลงาน CQI และนวัตกรรม': 'fas fa-lightbulb',
+            'อื่นๆ': 'fas fa-folder'
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMenuData();
+            initializeIconSelector();
+            initializeColorSelector();
+            setupEventListeners();
+            initializeRealTimeClock();
+        });
+
+        // Initialize real-time clock
+        function initializeRealTimeClock() {
+            updateDateTime();
+            // Update every second
+            setInterval(updateDateTime, 1000);
+        }
+        
+
+
+        // Update date and time display
+        function updateDateTime() {
+            const now = new Date();
+            
+            // Format date in Thai
+            const dateOptions = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'Asia/Bangkok'
+            };
+            
+            const thaiDate = now.toLocaleDateString('th-TH', dateOptions);
+            
+            // Format time
+            const timeOptions = {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+                timeZone: 'Asia/Bangkok'
+            };
+            
+            const thaiTime = now.toLocaleTimeString('th-TH', timeOptions);
+            
+            // Update DOM elements
+            const dateElement = document.getElementById('currentDate');
+            const timeElement = document.getElementById('currentTime');
+            
+            if (dateElement) {
+                dateElement.textContent = thaiDate;
+            }
+            
+            if (timeElement) {
+                timeElement.textContent = thaiTime;
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Add menu button
+            document.getElementById('addMenuBtn').addEventListener('click', () => {
+                openModal('addMenuModal');
+            });
+
+            // Close modal when clicking outside
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('modal-backdrop')) {
+                    closeModal(e.target.parentElement.id);
+                }
+            });
+
+            // Escape key to close modal
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const openModal = document.querySelector('.fixed.inset-0:not(.hidden)');
+                    if (openModal) {
+                        closeModal(openModal.id);
+                    }
+                }
+            });
+
+            // Add touch event listeners for better mobile support
+            document.addEventListener('touchstart', function(e) {
+                // Add touch feedback
+                if (e.target.closest('.menu-item')) {
+                    e.target.closest('.menu-item').style.opacity = '0.8';
+                }
+            });
+
+            document.addEventListener('touchend', function(e) {
+                // Remove touch feedback
+                if (e.target.closest('.menu-item')) {
+                    e.target.closest('.menu-item').style.opacity = '1';
+                }
+            });
+        }
+
+        // Load menu data from Google Sheets
+        async function loadMenuData() {
+            try {
+                const response = await fetch(`${SCRIPT_URL}?action=read`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    menuData = data.data;
+                    filteredData = [...menuData];
+                    renderMenus();
+                } else {
+                    console.error('Error loading data:', data.error);
+                    showError('ไม่สามารถโหลดข้อมูลได้');
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+        }
+
+
+
+        // Render menu items grouped by category
+        function renderMenus() {
+            const container = document.getElementById('menuContainer');
+            const loading = document.getElementById('loading');
+            
+            loading.classList.add('hidden');
+            container.classList.remove('hidden');
+            
+            // Group menus by category
+            const groupedMenus = {};
+            menuData.forEach((menu, index) => {
+                const category = menu.type || 'อื่นๆ';
+                if (!groupedMenus[category]) {
+                    groupedMenus[category] = [];
+                }
+                groupedMenus[category].push({ ...menu, originalIndex: index });
+            });
+            
+            // Sort categories with Daily Quality Check first
+            const sortedCategories = Object.keys(groupedMenus).sort((a, b) => {
+                if (a === 'Daily Quality Check') return -1;
+                if (b === 'Daily Quality Check') return 1;
+                return a.localeCompare(b, 'th');
+            });
+            
+            // Render each category
+            container.innerHTML = sortedCategories.map(category => {
+                const menus = groupedMenus[category];
+                const categoryIcon = categoryIcons[category] || 'fas fa-folder';
+                
+                return `
+                    <div class="mb-12">
+                        <!-- Category Header -->
+                        <div class="mb-6">
+                            <h2 class="text-xl font-semibold text-gray-800 flex items-center pb-2 border-b-2 border-mint-300">
+                                <i class="${categoryIcon} text-mint-400 mr-3 text-2xl"></i>
+                                ${category}
+                                <span class="ml-auto text-sm font-normal text-mint-600">${menus.length} รายการ</span>
+                            </h2>
+                        </div>
+                        
+                        <!-- Menu List - Smartphone Style -->
+                        <div class="flex justify-center">
+                            <div class="w-3/5 space-y-4">
+                                ${menus.map(menu => `
+                                    <div class="menu-item bg-white rounded-3xl py-8 px-6 cursor-pointer group relative overflow-hidden border border-gray-200 transition-all duration-300 shadow-lg hover:shadow-2xl transform hover:-translate-y-2 active:translate-y-0 active:shadow-md" 
+                                       style="box-shadow: 0 8px 25px rgba(0,0,0,0.15), 0 4px 10px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.4);"
+                                       onclick="handleMenuClick('${menu.link}', event)"
+                                       ontouchstart="this.style.transform='scale(0.98) translateY(2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.15)'" 
+                                       ontouchend="this.style.transform='scale(1) translateY(0px)'; this.style.boxShadow='0 8px 25px rgba(0,0,0,0.15), 0 4px 10px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.4)'"
+                                       data-url="${menu.link}">
+                                    
+                                    <!-- Menu Actions -->
+                                    <div class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-2">
+                                        <button 
+                                            onclick="event.stopPropagation(); editMenu(${menu.originalIndex})" 
+                                            class="w-10 h-10 rounded-full bg-white/90 text-mint-500 hover:bg-mint-100 transition-colors flex items-center justify-center shadow-sm"
+                                            title="แก้ไข"
+                                        >
+                                            <i class="fas fa-edit text-sm"></i>
+                                        </button>
+                                        <button 
+                                            onclick="event.stopPropagation(); deleteMenu(${menu.originalIndex})" 
+                                            class="w-10 h-10 rounded-full bg-white/90 text-rose-500 hover:bg-rose-100 transition-colors flex items-center justify-center shadow-sm"
+                                            title="ลบ"
+                                        >
+                                            <i class="fas fa-trash text-sm"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Menu Content - Centered Smartphone Style -->
+                                    <div class="flex flex-col items-center justify-center text-center space-y-4">
+                                        <!-- Menu Icon -->
+                                        <div class="flex-shrink-0">
+                                            <div class="w-20 h-20 rounded-3xl flex items-center justify-center shadow-lg" style="background: linear-gradient(135deg, ${menu.color}25, ${menu.color}15);">
+                                                <i class="${menu.icon} text-4xl animated-icon" style="color: ${menu.color}"></i>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Menu Info -->
+                                        <div class="flex-1 min-w-0 max-w-full">
+                                            <h3 class="text-xl font-semibold text-gray-800 leading-tight">${menu.name}</h3>
+                                        </div>
+                                        
+                                        <!-- Tap Indicator -->
+                                        <div class="flex-shrink-0 mt-2">
+                                            <div class="w-8 h-1 bg-gradient-to-r from-mint-300 to-mint-400 rounded-full opacity-60 group-hover:opacity-100 transition-opacity"></div>
+                                        </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+
+
+        // Handle menu click with multiple fallback methods
+        function handleMenuClick(url, event) {
+            console.log('Menu clicked:', url);
+            
+            if (!url) return;
+            
+            // Add visual feedback
+            const menuItem = event ? event.currentTarget : null;
+            if (menuItem) {
+                menuItem.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                    menuItem.style.transform = 'scale(1)';
+                }, 150);
+            }
+            
+            // Check if we're in LINE app
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isLineApp = userAgent.includes('line') || 
+                             userAgent.includes('liff') ||
+                             window.LineIt || 
+                             window.liff ||
+                             window.location.href.includes('line.me') ||
+                             window.location.href.includes('liff');
+            
+            console.log('Is LINE app:', isLineApp);
+            console.log('User Agent:', userAgent);
+            
+            if (isLineApp) {
+                // In LINE app - try multiple methods
+                openLinkInLine(url);
+            } else {
+                // In regular browser - use window.open
+                try {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                } catch (error) {
+                    console.error('Window.open failed:', error);
+                    // Fallback to location.href
+                    window.location.href = url;
+                }
+            }
+        }
+
+        // Process Google Drive URLs for better compatibility
+        function processGoogleDriveUrl(url) {
+            if (!url) return url;
+            
+            // Convert Google Drive view links to direct links
+            if (url.includes('drive.google.com/file/d/')) {
+                // Extract file ID from various Google Drive URL formats
+                let fileId = null;
+                
+                // Format: https://drive.google.com/file/d/FILE_ID/view
+                const viewMatch = url.match(/\/file\/d\/([a-zA-Z0-9-_]+)/);
+                if (viewMatch) {
+                    fileId = viewMatch[1];
+                }
+                
+                if (fileId) {
+                    // For PDF files, use the preview URL which works better in LINE
+                    if (url.toLowerCase().includes('.pdf') || url.includes('view')) {
+                        return `https://drive.google.com/file/d/${fileId}/preview`;
+                    }
+                    // For other files, use direct download
+                    return `https://drive.google.com/uc?export=download&id=${fileId}`;
+                }
+            }
+            
+            // Convert Google Drive folder sharing links
+            if (url.includes('drive.google.com/drive/folders/')) {
+                const folderMatch = url.match(/\/folders\/([a-zA-Z0-9-_]+)/);
+                if (folderMatch) {
+                    const folderId = folderMatch[1];
+                    return `https://drive.google.com/drive/folders/${folderId}`;
+                }
+            }
+            
+            return url;
+        }
+
+        // Enhanced link opening function for LINE app
+        function openLinkInLine(url) {
+            if (!url) return;
+            
+            console.log('Opening URL in LINE:', url);
+            
+            // Process Google Drive URLs for better compatibility
+            let processedUrl = processGoogleDriveUrl(url);
+            console.log('Processed URL:', processedUrl);
+            
+            // Try multiple methods in sequence
+            try {
+                // Method 1: Try window.open first
+                const newWindow = window.open(processedUrl, '_blank', 'noopener,noreferrer');
+                
+                // Check if popup was blocked
+                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                    console.log('Popup blocked, trying location.href');
+                    
+                    // Method 2: Use location.href directly
+                    window.location.href = processedUrl;
+                } else {
+                    console.log('Window opened successfully');
+                }
+            } catch (error) {
+                console.error('Error opening window:', error);
+                
+                // Method 3: Fallback to location.href
+                try {
+                    window.location.href = processedUrl;
+                } catch (locationError) {
+                    console.error('All methods failed:', locationError);
+                    // Force navigation as last resort
+                    document.location = processedUrl;
+                }
+            }
+        }
+
+
+
+
+
+        // Modal functions
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Initialize icon selector
+        function initializeIconSelector() {
+            const selector = document.getElementById('iconSelector');
+            selector.innerHTML = medicalIcons.map(icon => `
+                <div class="icon-option p-3 rounded-xl cursor-pointer transition-all hover:bg-gray-200 border-2 border-transparent" onclick="selectIcon('${icon}', this)">
+                    <i class="${icon} text-xl text-black"></i>
+                </div>
+            `).join('');
+            
+            selector.firstElementChild.classList.add('border-mint-400', 'bg-gray-200');
+        }
+
+        // Initialize edit icon selector
+        function initializeEditIconSelector() {
+            const selector = document.getElementById('editIconSelector');
+            selector.innerHTML = medicalIcons.map(icon => `
+                <div class="icon-option p-3 rounded-xl cursor-pointer transition-all hover:bg-gray-200 border-2 border-transparent" onclick="selectEditIcon('${icon}', this)">
+                    <i class="${icon} text-xl text-black"></i>
+                </div>
+            `).join('');
+        }
+
+        // Initialize color selector
+        function initializeColorSelector() {
+            const selector = document.getElementById('colorSelector');
+            selector.innerHTML = colors.map(color => `
+                <div class="color-option w-8 h-8 rounded-full cursor-pointer transition-all hover:scale-110 border-2 border-transparent" style="background-color: ${color}" onclick="selectColor('${color}', this)"></div>
+            `).join('');
+            
+            selector.firstElementChild.classList.add('border-gray-400', 'scale-110');
+        }
+
+        // Initialize edit color selector
+        function initializeEditColorSelector() {
+            const selector = document.getElementById('editColorSelector');
+            selector.innerHTML = colors.map(color => `
+                <div class="color-option w-8 h-8 rounded-full cursor-pointer transition-all hover:scale-110 border-2 border-transparent" style="background-color: ${color}" onclick="selectEditColor('${color}', this)"></div>
+            `).join('');
+        }
+
+        // Select icon
+        function selectIcon(iconClass, element) {
+            document.querySelectorAll('#iconSelector .icon-option').forEach(el => {
+                el.classList.remove('border-mint-400', 'bg-gray-200');
+            });
+            element.classList.add('border-mint-400', 'bg-gray-200');
+            document.getElementById('selectedIcon').value = iconClass;
+        }
+
+        // Select color
+        function selectColor(color, element) {
+            document.querySelectorAll('#colorSelector .color-option').forEach(el => {
+                el.classList.remove('border-gray-400', 'scale-110');
+            });
+            element.classList.add('border-gray-400', 'scale-110');
+            document.getElementById('selectedColor').value = color;
+        }
+
+        // Select edit icon
+        function selectEditIcon(iconClass, element) {
+            document.querySelectorAll('#editIconSelector .icon-option').forEach(el => {
+                el.classList.remove('border-mint-400', 'bg-gray-200');
+            });
+            element.classList.add('border-mint-400', 'bg-gray-200');
+            document.getElementById('editSelectedIcon').value = iconClass;
+        }
+
+        // Select edit color
+        function selectEditColor(color, element) {
+            document.querySelectorAll('#editColorSelector .color-option').forEach(el => {
+                el.classList.remove('border-gray-400', 'scale-110');
+            });
+            element.classList.add('border-gray-400', 'scale-110');
+            document.getElementById('editSelectedColor').value = color;
+        }
+
+        // Save new menu
+        async function saveMenu() {
+            const formData = {
+                action: 'create',
+                name: document.getElementById('menuName').value,
+                link: document.getElementById('menuLink').value,
+                type: document.getElementById('menuType').value,
+                icon: document.getElementById('selectedIcon').value,
+                color: document.getElementById('selectedColor').value
+            };
+
+            if (!formData.name || !formData.link) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ข้อมูลไม่ครบถ้วน',
+                    text: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+                    confirmButtonColor: '#14b8a6',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    backdrop: 'rgba(0, 0, 0, 0.4)'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'กำลังบันทึก...',
+                text: 'กรุณารอสักครู่',
+                allowOutsideClick: false,
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdrop: 'rgba(0, 0, 0, 0.4)',
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const params = new URLSearchParams(formData);
+                const response = await fetch(`${SCRIPT_URL}?${params}`, {
+                    method: 'GET'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    closeModal('addMenuModal');
+                    document.getElementById('addMenuForm').reset();
+                    await loadMenuData();
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'บันทึกข้อมูลสำเร็จ!',
+                        text: 'เมนูใหม่ถูกเพิ่มเรียบร้อยแล้ว',
+                        confirmButtonColor: '#14b8a6',
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        backdrop: 'rgba(0, 0, 0, 0.4)',
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: result.error || 'ไม่สามารถบันทึกข้อมูลได้',
+                        confirmButtonColor: '#14b8a6',
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        backdrop: 'rgba(0, 0, 0, 0.4)'
+                    });
+                }
+            } catch (error) {
+                console.error('Error saving menu:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                    confirmButtonColor: '#14b8a6',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    backdrop: 'rgba(0, 0, 0, 0.4)'
+                });
+            }
+        }
+
+        // Edit menu
+        function editMenu(index) {
+            const menu = menuData[index];
+            
+            document.getElementById('editMenuId').value = index;
+            document.getElementById('editMenuName').value = menu.name;
+            document.getElementById('editMenuLink').value = menu.link;
+            document.getElementById('editMenuType').value = menu.type || 'อื่นๆ';
+            document.getElementById('editSelectedIcon').value = menu.icon;
+            document.getElementById('editSelectedColor').value = menu.color;
+            
+            initializeEditIconSelector();
+            initializeEditColorSelector();
+            
+            setTimeout(() => {
+                const iconOption = document.querySelector(`#editIconSelector .icon-option i.${menu.icon.replace(/\s+/g, '.')}`);
+                if (iconOption) {
+                    iconOption.parentElement.classList.add('border-mint-400', 'bg-gray-200');
+                }
+                
+                const colorOption = document.querySelector(`#editColorSelector .color-option[style*="${menu.color}"]`);
+                if (colorOption) {
+                    colorOption.classList.add('border-gray-400', 'scale-110');
+                }
+            }, 100);
+            
+            openModal('editMenuModal');
+        }
+
+        // Update menu
+        async function updateMenu() {
+            const index = document.getElementById('editMenuId').value;
+            const menu = menuData[index];
+            
+            const formData = {
+                action: 'update',
+                id: menu.id || (index + 1),
+                name: document.getElementById('editMenuName').value,
+                link: document.getElementById('editMenuLink').value,
+                type: document.getElementById('editMenuType').value,
+                icon: document.getElementById('editSelectedIcon').value,
+                color: document.getElementById('editSelectedColor').value
+            };
+
+            if (!formData.name || !formData.link) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'ข้อมูลไม่ครบถ้วน',
+                    text: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+                    confirmButtonColor: '#14b8a6',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    backdrop: 'rgba(0, 0, 0, 0.4)'
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'กำลังอัพเดท...',
+                text: 'กรุณารอสักครู่',
+                allowOutsideClick: false,
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdrop: 'rgba(0, 0, 0, 0.4)',
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const params = new URLSearchParams(formData);
+                const response = await fetch(`${SCRIPT_URL}?${params}`, {
+                    method: 'GET'
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    menuData[index] = {
+                        ...menu,
+                        name: formData.name,
+                        link: formData.link,
+                        type: formData.type,
+                        icon: formData.icon,
+                        color: formData.color
+                    };
+                    
+                    filteredData = [...menuData];
+                    renderMenus();
+                    closeModal('editMenuModal');
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'อัพเดทสำเร็จ!',
+                        text: 'ข้อมูลเมนูถูกอัพเดทเรียบร้อยแล้ว',
+                        confirmButtonColor: '#14b8a6',
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        backdrop: 'rgba(0, 0, 0, 0.4)',
+                        timer: 2000,
+                        timerProgressBar: true
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: result.error || 'ไม่สามารถอัพเดทข้อมูลได้',
+                        confirmButtonColor: '#14b8a6',
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        backdrop: 'rgba(0, 0, 0, 0.4)'
+                    });
+                }
+            } catch (error) {
+                console.error('Error updating menu:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'เกิดข้อผิดพลาด',
+                    text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                    confirmButtonColor: '#14b8a6',
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    backdrop: 'rgba(0, 0, 0, 0.4)'
+                });
+            }
+        }
+
+        // Delete menu
+        async function deleteMenu(index) {
+            const menu = menuData[index];
+            
+            const passwordResult = await Swal.fire({
+                title: 'ใส่รหัสผ่าน',
+                text: 'กรุณาใส่รหัสผ่านเพื่อลบเมนู',
+                input: 'password',
+                inputPlaceholder: 'รหัสผ่าน',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#14b8a6',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ตรวจสอบ',
+                cancelButtonText: 'ยกเลิก',
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdrop: 'rgba(0, 0, 0, 0.4)',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'กรุณาใส่รหัสผ่าน';
+                    }
+                    if (value !== '1234') {
+                        return 'รหัสผ่านไม่ถูกต้อง';
+                    }
+                }
+            });
+
+            if (!passwordResult.isConfirmed) {
+                return;
+            }
+            
+            const result = await Swal.fire({
+                title: 'ยืนยันการลบ',
+                text: `คุณต้องการลบเมนู "${menu.name}" หรือไม่?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#f43f5e',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'ลบ',
+                cancelButtonText: 'ยกเลิก',
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdrop: 'rgba(0, 0, 0, 0.4)'
+            });
+
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'กำลังลบ...',
+                    text: 'กรุณารอสักครู่',
+                    allowOutsideClick: false,
+                    background: 'rgba(255, 255, 255, 0.95)',
+                    backdrop: 'rgba(0, 0, 0, 0.4)',
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                try {
+                    const params = new URLSearchParams({
+                        action: 'delete',
+                        id: menu.id || (index + 1),
+                        index: index
+                    });
+                    
+                    const response = await fetch(`${SCRIPT_URL}?${params}`, {
+                        method: 'GET'
+                    });
+
+                    const deleteResult = await response.json();
+                    
+                    if (deleteResult.success) {
+                        menuData.splice(index, 1);
+                        filteredData = [...menuData];
+                        renderMenus();
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'ลบสำเร็จ!',
+                            text: 'เมนูถูกลบเรียบร้อยแล้ว',
+                            confirmButtonColor: '#14b8a6',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            backdrop: 'rgba(0, 0, 0, 0.4)',
+                            timer: 2000,
+                            timerProgressBar: true
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'เกิดข้อผิดพลาด',
+                            text: deleteResult.error || 'ไม่สามารถลบข้อมูลได้',
+                            confirmButtonColor: '#14b8a6',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            backdrop: 'rgba(0, 0, 0, 0.4)'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error deleting menu:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้',
+                        confirmButtonColor: '#14b8a6',
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        backdrop: 'rgba(0, 0, 0, 0.4)'
+                    });
+                }
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            document.getElementById('loading').innerHTML = `
+                <div class="glass rounded-2xl p-8 text-center">
+                    <i class="fas fa-exclamation-triangle text-4xl text-rose-500 mb-4"></i>
+                    <p class="text-gray-700 font-medium">${message}</p>
+                </div>
+            `;
+        }
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9659bd072078ce0f',t:'MTc1MzU5NDE1OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
